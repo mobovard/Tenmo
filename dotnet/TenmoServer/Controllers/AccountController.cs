@@ -7,26 +7,33 @@ using TenmoServer.Models;
 
 namespace TenmoServer.Controllers
 {
-    [Route("User/[controller]")]
+    [Route("user/[controller]")]
     [ApiController]
     [Authorize]
     public class AccountController : ControllerBase
     {
-        private readonly IUserDAO userDAO;
         private readonly IAccountDAO accountDAO;
-        public AccountController(IUserDAO userDAO, IAccountDAO accountDAO)
+        public AccountController(IAccountDAO accountDAO)
         {
-            this.userDAO = userDAO;
             this.accountDAO = accountDAO;
         }
 
 
-        [HttpGet("{userId}")]
-        public ActionResult<Account> GetAccount(int userId)
+        [HttpGet]
+        public ActionResult<Account> GetAccount()
         {
-            Account userAccount = accountDAO.GetAccount(userId);
-            //string test = User.FindFirst("UserId").Value;
-            return Ok(userAccount);
+            // grabs ID from authorized JWT and tries to parse it into a userId
+            if (int.TryParse(User.FindFirst("sub")?.Value, out int userId)) 
+            {
+                // creates user account object and passes it back
+                Account userAccount = accountDAO.GetAccount(userId);
+                return Ok(userAccount);
+            }
+            else
+            {
+                // if unable to parse subject line of JWT into an ID
+                return NotFound("Invalid User ID");
+            }
         }
     }
 }

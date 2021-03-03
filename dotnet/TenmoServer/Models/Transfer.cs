@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace TenmoServer.Models
 {
@@ -11,7 +8,11 @@ namespace TenmoServer.Models
         public int TransferTypeId { get; set; }
         public int TransferStatusId { get; set; }
         public int AccountFrom { get; set; }
+
+        [Required(ErrorMessage = "Account To should not be blank.")]
         public int AccountTo { get; set; }
+
+        [Required(ErrorMessage = "Ammount should not be blank.")]
         public decimal Amount { get; set; }
     }
 }

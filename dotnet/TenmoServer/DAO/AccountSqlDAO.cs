@@ -44,6 +44,35 @@ namespace TenmoServer.DAO
             return returnAccount;
         }
 
+        public void UpdateBalance(int accountId, decimal difference)
+        {
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                    conn.Open();
+
+                    // get initial balance
+                    SqlCommand getBalCmd = new SqlCommand("SELECT balance FROM accounts WHERE account_id = @accountId;", conn);
+                    getBalCmd.Parameters.AddWithValue("@accountId", accountId);
+                    SqlDataReader reader = getBalCmd.ExecuteReader();
+                    reader.Read();
+                    decimal balance = Convert.ToDecimal(reader["balance"]);
+                    reader.Close();
+
+                    // update balance
+                    SqlCommand updateCmd = new SqlCommand("UPDATE accounts SET balance = @balance WHERE account_id = @accountId;", conn);
+                    updateCmd.Parameters.AddWithValue("@balance", balance + difference);
+                    updateCmd.Parameters.AddWithValue("@accountId", accountId);
+                    updateCmd.ExecuteNonQuery();
+                }
+            }
+            catch (SqlException)
+            {
+                throw;
+            }
+        }
+
         private Account GetAccountFromReader(SqlDataReader reader)
         {
             Account a = new Account()
