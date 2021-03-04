@@ -87,11 +87,16 @@ namespace TenmoClient
                 }
                 else if (menuSelection == 1)
                 {
-                    consoleService.GetBalance();
+                    consoleService.DisplayBalance();
                 }
                 else if (menuSelection == 2)
                 {
-
+                    consoleService.DisplayTransfers();
+                    int transferId = consoleService.GetInteger("Enter ID of transaction to get more information (0 to cancel):");
+                    if (transferId != 0)
+                    {
+                        consoleService.DisplayTransfer(transferId);
+                    }
                 }
                 else if (menuSelection == 3)
                 {
@@ -99,7 +104,22 @@ namespace TenmoClient
                 }
                 else if (menuSelection == 4)
                 {
+                    //display users
+                    consoleService.DisplayUsers();
+                    //get user selection
+                    int transferToID = consoleService.GetInteger("Enter ID of user you are sending to(0 to cancel):");
+                    if (transferToID != 0) // allows user to break out of transfer if they enter '0'
+                    {
+                        decimal amount = consoleService.GetDecimal("Enter amount:");
+                        API_Transfer t = new API_Transfer()
+                        {
+                            ToUserId = transferToID,
+                            Amount = amount
+                        };
 
+                        //initiate transfer
+                        consoleService.CreateTransfer(t);
+                    }
                 }
                 else if (menuSelection == 5)
                 {

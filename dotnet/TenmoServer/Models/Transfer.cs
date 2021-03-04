@@ -5,14 +5,14 @@ namespace TenmoServer.Models
     public class Transfer
     {
         public int TransferId { get; set; }
-        public int TransferTypeId { get; set; }
-        public int TransferStatusId { get; set; }
+        public TransferTypes TransferTypeId { get; set; }
+        public TransferStatus TransferStatusId { get; set; }
         public int AccountFrom { get; set; }
-
-        [Required(ErrorMessage = "Account To should not be blank.")]
+        public int FromUserId { get; set; }
+        public string FromUsername { get; set; }
         public int AccountTo { get; set; }
-
-        [Required(ErrorMessage = "Ammount should not be blank.")]
+        public int ToUserId { get; set; }
+        public string ToUsername { get; set; }
         public decimal Amount { get; set; }
     }
 }

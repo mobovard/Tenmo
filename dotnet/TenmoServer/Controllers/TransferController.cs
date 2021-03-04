@@ -28,25 +28,35 @@ namespace TenmoServer.Controllers
             {
                 // make sure user has funds for transfer
                 Account userAccount = accountDAO.GetAccount(userId);
-                if (userAccount.Balance >= newTransfer.Amount)
+                Account toAccount = accountDAO.GetAccount(newTransfer.ToUserId);
+                if (toAccount != null)
                 {
-                    // transfer can be made
-                    // create transfer with 'approved status'
-                    newTransfer.TransferTypeId = (int)TransferTypes.SEND;
-                    newTransfer.TransferStatusId = (int)TransferStatus.APPROVED;
-                    newTransfer.AccountFrom = userAccount.AccountId;
+                    if (userAccount.Balance >= newTransfer.Amount)
+                    {
+                        // transfer can be made
+                        // create transfer with 'approved status'
+                        newTransfer.TransferTypeId = TransferTypes.SEND;
+                        newTransfer.TransferStatusId = TransferStatus.APPROVED;
+                        newTransfer.AccountFrom = userAccount.AccountId;
+                        newTransfer.AccountTo = toAccount.AccountId;
 
-                    // ? adjust balances ? TODO
-                    TransferFunds(newTransfer);
+                        // ? adjust balances ? TODO
+                        TransferFunds(newTransfer);
 
-                    // post transfer to Sql
-                    Transfer addedTransfer = transferDAO.AddTransfer(newTransfer);
-                    return Created($"/user/transfer/{addedTransfer.TransferId}", addedTransfer);
+                        // post transfer to Sql
+                        Transfer addedTransfer = transferDAO.AddTransfer(newTransfer);
+                        return Created($"/user/transfer/{addedTransfer.TransferId}", addedTransfer);
+                    }
+                    else
+                    {
+                        // return code of insufficient funds
+                        return BadRequest("Insufficient Funds");
+                    }
                 }
                 else
                 {
-                    // return code of insufficient funds
-                    return BadRequest("Insufficient Funds");
+                    //if toUser account doesn't exist (ie, bad user ID was entered)
+                    return BadRequest("Invalid User ID");
                 }
             }
             else
@@ -71,7 +81,6 @@ namespace TenmoServer.Controllers
                 {
                     return BadRequest("Something went wrong");
                 }
-
             }
             else
             {
@@ -112,7 +121,7 @@ namespace TenmoServer.Controllers
 
         private void TransferFunds(Transfer newTransfer)
         {
-            if (newTransfer.TransferStatusId == (int)TransferStatus.APPROVED)
+            if (newTransfer.TransferStatusId == TransferStatus.APPROVED)
             {
                 accountDAO.UpdateBalance(newTransfer.AccountFrom, -(newTransfer.Amount));
                 accountDAO.UpdateBalance(newTransfer.AccountTo, newTransfer.Amount);

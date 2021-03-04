@@ -55,7 +55,7 @@ namespace TenmoServer.DAO
                 {
                     conn.Open();
 
-                    SqlCommand cmd = new SqlCommand("SELECT user_id, username FROM users", conn);
+                    SqlCommand cmd = new SqlCommand("SELECT user_id, username FROM users ORDER BY user_id;", conn);
                     SqlDataReader reader = cmd.ExecuteReader();
 
                     while (reader.Read())
