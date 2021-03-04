@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Collections.Generic;
 using TenmoServer.DAO;
 using TenmoServer.Models;
 
@@ -52,6 +53,60 @@ namespace TenmoServer.Controllers
             {
                 // if unable to parse subject line of JWT into an ID
                 return NotFound("Invalid User ID");
+            }
+        }
+
+        [HttpGet]
+        public ActionResult<List<Transfer>> GetTransfersForUser()
+        {
+            if (int.TryParse(User.FindFirst("sub")?.Value, out int userId))
+            {
+                //get list transfers
+                List<Transfer> transfers = transferDAO.GetTransfersForUser(userId);
+                if (transfers != null)
+                {
+                    return Ok(transfers);
+                }
+                else
+                {
+                    return BadRequest("Something went wrong");
+                }
+
+            }
+            else
+            {
+                // if unable to parse subject line of JWT into an ID
+                return NotFound("Invalid User ID");
+            }
+        }
+
+        [HttpGet("{transferId}")]
+        public ActionResult<Transfer> GetTransferById(int transferId)
+        {
+            Transfer transfer = transferDAO.GetTransferById(transferId);
+            if (transfer != null)
+            {
+                if (int.TryParse(User.FindFirst("sub")?.Value, out int userId))
+                {
+                    Account userAccount = accountDAO.GetAccount(userId);
+
+                    if (userAccount.AccountId == transfer.AccountFrom || userAccount.AccountId == transfer.AccountTo)
+                    {
+                        return Ok(transfer);
+                    }
+                    else
+                    {
+                        return StatusCode(403, "Access denied");
+                    }
+                }
+                else
+                {
+                    return NotFound("Invalid User ID");
+                }
+            }
+            else
+            {
+                return BadRequest("Invalid transfer ID");
             }
         }
 

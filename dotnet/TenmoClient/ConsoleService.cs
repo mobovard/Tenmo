@@ -1,4 +1,6 @@
-﻿using System;
+﻿using RestSharp;
+using RestSharp.Authenticators;
+using System;
 using System.Collections.Generic;
 using TenmoClient.Data;
 
@@ -6,6 +8,9 @@ namespace TenmoClient
 {
     public class ConsoleService
     {
+        private readonly static string API_BASE_URL = "https://localhost:44315/";
+        private readonly IRestClient client = new RestClient();
+
         /// <summary>
         /// Prompts for transfer ID to view, approve, or reject
         /// </summary>
@@ -69,6 +74,17 @@ namespace TenmoClient
             while (key.Key != ConsoleKey.Enter);
             Console.WriteLine("");
             return pass;
+        }
+
+
+        public void GetBalance()
+        {
+            RestRequest request = new RestRequest(API_BASE_URL + "user/account");
+            client.Authenticator = new JwtAuthenticator(UserService.GetToken());
+            IRestResponse<API_Account> response = client.Get<API_Account>(request);
+
+            Console.WriteLine($"Your current account balance is: {response.Data.Balance:C2}");
+
         }
     }
 }

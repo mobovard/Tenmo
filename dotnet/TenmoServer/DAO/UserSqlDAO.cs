@@ -45,9 +45,9 @@ namespace TenmoServer.DAO
             return returnUser;
         }
 
-        public List<User> GetUsers()
+        public List<ShortUser> GetUsers()
         {
-            List<User> returnUsers = new List<User>();
+            List<ShortUser> returnUsers = new List<ShortUser>();
 
             try
             {
@@ -55,12 +55,17 @@ namespace TenmoServer.DAO
                 {
                     conn.Open();
 
-                    SqlCommand cmd = new SqlCommand("SELECT user_id, username, password_hash, salt FROM users", conn);
+                    SqlCommand cmd = new SqlCommand("SELECT user_id, username FROM users", conn);
                     SqlDataReader reader = cmd.ExecuteReader();
 
                     while (reader.Read())
                     {
-                        User u = GetUserFromReader(reader);
+                        ShortUser u = new ShortUser()
+                        {
+                            UserId = Convert.ToInt32(reader["user_id"]),
+                            Username = Convert.ToString(reader["username"])
+                        };
+
                         returnUsers.Add(u);
                     }
                 }
