@@ -127,6 +127,49 @@ namespace TenmoClient
             }
         }
 
+        internal void RespondToTransfer(int transferId)
+        {
+            RestRequest request = new RestRequest(API_BASE_URL + $"user/transfer/{transferId}");
+            client.Authenticator = new JwtAuthenticator(UserService.GetToken());
+            IRestResponse<API_Transfer> getTransferResp = client.Get<API_Transfer>(request);
+
+            if (getTransferResp?.Data != null)
+            {
+                API_Transfer t = getTransferResp.Data;
+
+                Console.WriteLine(DASHES);
+                Console.WriteLine("1: Approve");
+                Console.WriteLine("2: Reject");
+                Console.WriteLine("0: Don't approve or reject");
+                Console.WriteLine(DASHES);
+                int userSelection = GetInteger("Please choose an option:");
+                switch (userSelection)
+                {
+                    case 1:
+                        t.TransferStatusId = API_TransferStatus.Approved;
+                        break;
+                    case 2:
+                        t.TransferStatusId = API_TransferStatus.Rejected;
+                        break;
+                    default:
+                        Console.WriteLine("That wasn't an option!");
+                        break;
+                }
+
+                request.AddJsonBody(t);
+                IRestResponse<API_Transfer> response = client.Put<API_Transfer>(request);
+
+                if (!response.IsSuccessful)
+                {
+                    Console.WriteLine($"Error {(int)response.StatusCode}: {response.Content}");
+                }
+                else
+                {
+                    Console.WriteLine($"Transfer {t.TransferStatusId}.");
+                }
+            }
+        }
+
         public void CreateTransfer(API_Transfer transfer)
         {
             RestRequest request = new RestRequest(API_BASE_URL + "user/transfer");
@@ -199,9 +242,9 @@ namespace TenmoClient
 
                 foreach (API_Transfer transfer in response.Data)
                 {
-                    if (transfer.ToUserId == UserService.GetUserId())
+                    if (transfer.FromUserId == UserService.GetUserId())
                     {
-                        Console.WriteLine(String.Format("{0,-8} {1,-20} {2,0}", transfer.TransferId, transfer.FromUsername, $"{transfer.Amount:C2}"));
+                        Console.WriteLine(String.Format("{0,-8} {1,-20} {2,0}", transfer.TransferId, transfer.ToUsername, $"{transfer.Amount:C2}"));
                     }
 
                 }

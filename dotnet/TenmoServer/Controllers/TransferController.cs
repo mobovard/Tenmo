@@ -30,19 +30,44 @@ namespace TenmoServer.Controllers
             // grabs ID from authorized JWT and tries to parse it into a userId
             if (int.TryParse(User.FindFirst("sub")?.Value, out int userId))
             {
-                // make sure user has funds for transfer
-                Account userAccount = accountDAO.GetAccount(userId);
-                Account toAccount = accountDAO.GetAccount(newTransfer.ToUserId);
-
-                if (toAccount != null)
+                if (newTransfer.TransferTypeId == TransferTypes.SEND)
                 {
-                    if (userAccount.Balance >= newTransfer.Amount)
+                    Account userAccount = accountDAO.GetAccount(userId);
+                    Account toAccount = accountDAO.GetAccount(newTransfer.ToUserId);
+                    if (toAccount != null)
                     {
-                        // transfer can be made
-                        newTransfer.AccountFrom = userAccount.AccountId;
-                        newTransfer.AccountTo = toAccount.AccountId;
+                        if (userAccount.Balance >= newTransfer.Amount)
+                        {
+                            // transfer can be made
+                            newTransfer.AccountFrom = userAccount.AccountId;
+                            newTransfer.AccountTo = toAccount.AccountId;
 
-                        TransferFunds(newTransfer);
+                            TransferFunds(newTransfer);
+
+                            // post transfer to Sql
+                            Transfer addedTransfer = transferDAO.AddTransfer(newTransfer);
+                            return Created($"/user/transfer/{addedTransfer.TransferId}", addedTransfer);
+                        }
+                        else
+                        {
+                            // return code of insufficient funds
+                            return BadRequest("Insufficient Funds");
+                        }
+                    }
+                    else
+                    {
+                        //if toUser account doesn't exist (ie, bad user ID was entered)
+                        return BadRequest("Invalid User ID");
+                    }
+                }
+                else
+                {
+                    Account userAccount = accountDAO.GetAccount(userId);
+                    Account fromAccount = accountDAO.GetAccount(newTransfer.FromUserId);
+                    if (fromAccount != null)
+                    {
+                        newTransfer.AccountFrom = fromAccount.AccountId;
+                        newTransfer.AccountTo = userAccount.AccountId;
 
                         // post transfer to Sql
                         Transfer addedTransfer = transferDAO.AddTransfer(newTransfer);
@@ -50,14 +75,9 @@ namespace TenmoServer.Controllers
                     }
                     else
                     {
-                        // return code of insufficient funds
-                        return BadRequest("Insufficient Funds");
+                        //if toUser account doesn't exist (ie, bad user ID was entered)
+                        return BadRequest("Invalid User ID");
                     }
-                }
-                else
-                {
-                    //if toUser account doesn't exist (ie, bad user ID was entered)
-                    return BadRequest("Invalid User ID");
                 }
             }
             else
@@ -139,25 +159,29 @@ namespace TenmoServer.Controllers
         }
 
         [HttpPut("{transferId}")]
-        public ActionResult<Transfer> UpdateTransferStatus(int transferId, Transfer transfer)
+        public ActionResult<Transfer> UpdateTransferStatus(int transferId, Transfer transfer) // TODO: check balance
         {
-            Transfer dbTransfer = GetTransferById(transferId).Value;
-            
+            Transfer dbTransfer = transferDAO.GetTransferById(transferId);
+
             if (int.TryParse(User.FindFirst("sub")?.Value, out int userId))
             {
-                Account fromAccount = accountDAO.GetAccount(dbTransfer.FromUserId);
-                if (dbTransfer.TransferId == transfer.TransferId && transfer.ToUserId == userId && transfer.FromUserId == dbTransfer.FromUserId && fromAccount.Balance >= transfer.Amount && dbTransfer.Amount == transfer.Amount)
+                if (transfer.FromUserId == userId)
                 {
-                    Transfer t = transferDAO.UpdateTransferStatus(transfer);
+                    if (dbTransfer.TransferStatusId == TransferStatus.PENDING && dbTransfer.TransferId == transfer.TransferId && transfer.ToUserId == dbTransfer.ToUserId && dbTransfer.Amount == transfer.Amount)
+                    {
+                        Transfer t = transferDAO.UpdateTransferStatus(transfer);
 
-                    TransferFunds(t);
-
-                    return Ok(t);
+                        TransferFunds(t);
+                        return Ok(t);
+                    }
+                    else
+                    {
+                        return BadRequest("Invalid request");
+                    }
                 }
-                    
                 else
                 {
-                    return BadRequest("Invalid request");
+                    return StatusCode(403, "Access denied");
                 }
             }
             else
