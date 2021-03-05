@@ -7,8 +7,8 @@ namespace TenmoClient.Data
     public class API_Transfer
     {
         public int TransferId { get; set; }
-        public int TransferTypeId { get; set; }
-        public int TransferStatusId { get; set; }
+        public API_TransferTypes TransferTypeId { get; set; }
+        public API_TransferStatus TransferStatusId { get; set; }
         public int AccountFrom { get; set; }
         public int FromUserId { get; set; }
         public string FromUsername { get; set; }

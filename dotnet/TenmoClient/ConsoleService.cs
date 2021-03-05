@@ -6,10 +6,12 @@ using TenmoClient.Data;
 
 namespace TenmoClient
 {
+
     public class ConsoleService
     {
         private readonly static string API_BASE_URL = "https://localhost:44315/";
         private readonly IRestClient client = new RestClient();
+        private const string DASHES = "-----------------------------------------";
 
         /// <summary>
         /// Prompts for transfer ID to view, approve, or reject
@@ -98,10 +100,10 @@ namespace TenmoClient
 
         public void DisplayUsers()
         {
-            Console.WriteLine("---------------------------");
+            Console.WriteLine(DASHES);
             Console.WriteLine("Users");
             Console.WriteLine(String.Format("{0,-12}", "ID") + "Name");
-            Console.WriteLine("---------------------------");
+            Console.WriteLine(DASHES);
 
             RestRequest request = new RestRequest(API_BASE_URL + "user");
             client.Authenticator = new JwtAuthenticator(UserService.GetToken());
@@ -121,7 +123,7 @@ namespace TenmoClient
                 {
                     Console.WriteLine(String.Format("{0,-12}", user.UserId) + user.Username);
                 }
-                Console.WriteLine("---------------------------");
+                Console.WriteLine(DASHES);
             }
         }
 
@@ -154,10 +156,10 @@ namespace TenmoClient
             }
             else
             {
-                Console.WriteLine("---------------------------");
+                Console.WriteLine(DASHES);
                 Console.WriteLine("Transfers");
                 Console.WriteLine(String.Format("{0,-8} {1,-20} {2,0}", "ID", "From/To", "Amount"));
-                Console.WriteLine("---------------------------");
+                Console.WriteLine(DASHES);
 
                 foreach (API_Transfer transfer in response.Data)
                 {
@@ -172,11 +174,40 @@ namespace TenmoClient
                     }
 
                     Console.WriteLine(String.Format("{0,-8} {1,-20} {2,0}", transfer.TransferId, tofrom, $"{transfer.Amount:C2}"));
+
                 }
-                Console.WriteLine("---------------------------");
+                Console.WriteLine(DASHES);
             }
         }
 
+        public void DisplayPendingTransfers()
+        {
+            RestRequest request = new RestRequest(API_BASE_URL + "user/transfer?status=pending");
+            client.Authenticator = new JwtAuthenticator(UserService.GetToken());
+            IRestResponse<List<API_Transfer>> response = client.Get<List<API_Transfer>>(request);
+
+            if (!response.IsSuccessful)
+            {
+                Console.WriteLine($"Error {(int)response.StatusCode}: {response.Content}");
+            }
+            else
+            {
+                Console.WriteLine(DASHES);
+                Console.WriteLine("Transfers");
+                Console.WriteLine(String.Format("{0,-8} {1,-20} {2,0}", "ID", "To", "Amount"));
+                Console.WriteLine(DASHES);
+
+                foreach (API_Transfer transfer in response.Data)
+                {
+                    if (transfer.ToUserId == UserService.GetUserId())
+                    {
+                        Console.WriteLine(String.Format("{0,-8} {1,-20} {2,0}", transfer.TransferId, transfer.FromUsername, $"{transfer.Amount:C2}"));
+                    }
+
+                }
+                Console.WriteLine(DASHES);
+            }
+        }
         public void DisplayTransfer(int transferID)
         {
             RestRequest request = new RestRequest(API_BASE_URL + $"user/transfer/{transferID}");
@@ -189,16 +220,16 @@ namespace TenmoClient
             }
             else
             {
-                Console.WriteLine("---------------------------");
+                Console.WriteLine(DASHES);
                 Console.WriteLine("Transfer Details");
-                Console.WriteLine("---------------------------");
+                Console.WriteLine(DASHES);
                 Console.WriteLine($"Id: {response.Data.TransferId}");
                 Console.WriteLine($"From: {response.Data.FromUsername} ({response.Data.FromUserId})");
                 Console.WriteLine($"To: {response.Data.ToUsername} ({response.Data.ToUserId})");
                 Console.WriteLine($"Type: {response.Data.TransferTypeId}");
                 Console.WriteLine($"Status: {response.Data.TransferStatusId}");
                 Console.WriteLine($"Amount: {response.Data.Amount:C2}");
-                Console.WriteLine("---------------------------");
+                Console.WriteLine(DASHES);
             }
         }
 

@@ -100,19 +100,21 @@ namespace TenmoClient
                 }
                 else if (menuSelection == 3)
                 {
-
+                    consoleService.DisplayPendingTransfers();
                 }
                 else if (menuSelection == 4)
                 {
                     //display users
                     consoleService.DisplayUsers();
                     //get user selection
-                    int transferToID = consoleService.GetInteger("Enter ID of user you are sending to(0 to cancel):");
+                    int transferToID = consoleService.GetInteger("Enter ID of user you are sending to (0 to cancel):");
                     if (transferToID != 0) // allows user to break out of transfer if they enter '0'
                     {
                         decimal amount = consoleService.GetDecimal("Enter amount:");
                         API_Transfer t = new API_Transfer()
                         {
+                            TransferTypeId = API_TransferTypes.Send,
+                            TransferStatusId = API_TransferStatus.Approved,
                             ToUserId = transferToID,
                             Amount = amount
                         };
@@ -123,7 +125,24 @@ namespace TenmoClient
                 }
                 else if (menuSelection == 5)
                 {
+                    //display users
+                    consoleService.DisplayUsers();
+                    //get user selection
+                    int transferToID = consoleService.GetInteger("Enter ID of user you are requesting from (0 to cancel):");
+                    if (transferToID != 0) // allows user to break out of transfer if they enter '0'
+                    {
+                        decimal amount = consoleService.GetDecimal("Enter amount:");
+                        API_Transfer t = new API_Transfer()
+                        {
+                            TransferTypeId = API_TransferTypes.Request,
+                            TransferStatusId = API_TransferStatus.Pending,
+                            ToUserId = transferToID,
+                            Amount = amount
+                        };
 
+                        //initiate transfer
+                        consoleService.CreateTransfer(t);
+                    }
                 }
                 else if (menuSelection == 6)
                 {

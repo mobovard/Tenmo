@@ -23,24 +23,25 @@ namespace TenmoServer.Controllers
         [HttpPost]
         public ActionResult<Transfer> AddTransfer(Transfer newTransfer)
         {
+            if (newTransfer.TransferTypeId == TransferTypes.REQUEST && newTransfer.TransferStatusId != TransferStatus.PENDING)
+            {
+                return BadRequest("Requests must be created in Pending status");
+            }
             // grabs ID from authorized JWT and tries to parse it into a userId
             if (int.TryParse(User.FindFirst("sub")?.Value, out int userId))
             {
                 // make sure user has funds for transfer
                 Account userAccount = accountDAO.GetAccount(userId);
                 Account toAccount = accountDAO.GetAccount(newTransfer.ToUserId);
+
                 if (toAccount != null)
                 {
                     if (userAccount.Balance >= newTransfer.Amount)
                     {
                         // transfer can be made
-                        // create transfer with 'approved status'
-                        newTransfer.TransferTypeId = TransferTypes.SEND;
-                        newTransfer.TransferStatusId = TransferStatus.APPROVED;
                         newTransfer.AccountFrom = userAccount.AccountId;
                         newTransfer.AccountTo = toAccount.AccountId;
 
-                        // ? adjust balances ? TODO
                         TransferFunds(newTransfer);
 
                         // post transfer to Sql
@@ -67,12 +68,30 @@ namespace TenmoServer.Controllers
         }
 
         [HttpGet]
-        public ActionResult<List<Transfer>> GetTransfersForUser()
+        public ActionResult<List<Transfer>> GetTransfersForUser(string status)
         {
             if (int.TryParse(User.FindFirst("sub")?.Value, out int userId))
             {
+
+                TransferStatus? ts = null;
+
+                if (status != null)
+                {
+                    if (status.ToLower() == "pending")
+                    {
+                        ts = TransferStatus.PENDING;
+                    }
+                    else if (status.ToLower() == "approved")
+                    {
+                        ts = TransferStatus.APPROVED;
+                    }
+                    else if (status.ToLower() == "rejected")
+                    {
+                        ts = TransferStatus.REJECTED;
+                    }
+                }
                 //get list transfers
-                List<Transfer> transfers = transferDAO.GetTransfersForUser(userId);
+                List<Transfer> transfers = transferDAO.GetTransfersForUser(userId, ts);
                 if (transfers != null)
                 {
                     return Ok(transfers);
@@ -116,6 +135,34 @@ namespace TenmoServer.Controllers
             else
             {
                 return BadRequest("Invalid transfer ID");
+            }
+        }
+
+        [HttpPut("{transferId}")]
+        public ActionResult<Transfer> UpdateTransferStatus(int transferId, Transfer transfer)
+        {
+            Transfer dbTransfer = GetTransferById(transferId).Value;
+            
+            if (int.TryParse(User.FindFirst("sub")?.Value, out int userId))
+            {
+                Account fromAccount = accountDAO.GetAccount(dbTransfer.FromUserId);
+                if (dbTransfer.TransferId == transfer.TransferId && transfer.ToUserId == userId && transfer.FromUserId == dbTransfer.FromUserId && fromAccount.Balance >= transfer.Amount && dbTransfer.Amount == transfer.Amount)
+                {
+                    Transfer t = transferDAO.UpdateTransferStatus(transfer);
+
+                    TransferFunds(t);
+
+                    return Ok(t);
+                }
+                    
+                else
+                {
+                    return BadRequest("Invalid request");
+                }
+            }
+            else
+            {
+                return NotFound("Invalid User ID");
             }
         }
 

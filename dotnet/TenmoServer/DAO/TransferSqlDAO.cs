@@ -47,7 +47,7 @@ namespace TenmoServer.DAO
             return addTransfer;
         }
 
-        public List<Transfer> GetTransfersForUser(int userId)
+        public List<Transfer> GetTransfersForUser(int userId, TransferStatus? status)
         {
             List<Transfer> returnTransfers = new List<Transfer>();
             try
@@ -56,7 +56,19 @@ namespace TenmoServer.DAO
                 {
                     conn.Open();
 
-                    SqlCommand cmd = new SqlCommand(BASE_QUERY + "WHERE @userId IN (af.user_id, at.user_id);", conn);
+                    string commandText = BASE_QUERY + "WHERE @userId IN(af.user_id, at.user_id)";
+
+                    SqlCommand cmd = new SqlCommand();
+                    cmd.Connection = conn;
+                    if (status == null)
+                    {
+                        cmd.CommandText = commandText;
+                    }
+                    else
+                    {
+                        cmd.CommandText = commandText + " AND transfer_status_id = @statusId;";
+                        cmd.Parameters.AddWithValue("@statusId", (int)status);
+                    }
                     cmd.Parameters.AddWithValue("@userId", userId);
 
                     SqlDataReader reader = cmd.ExecuteReader();
@@ -102,6 +114,33 @@ namespace TenmoServer.DAO
             }
 
             return returnTransfer;
+        }
+
+        public Transfer UpdateTransferStatus(Transfer transfer)
+        {
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                    conn.Open();
+
+                    SqlCommand cmd = new SqlCommand("UPDATE transfers SET transfer_status_id = @statusId WHERE transfer_id = @transferId;", conn);
+                    cmd.Parameters.AddWithValue("@transferId", transfer.TransferId);
+                    cmd.Parameters.AddWithValue("@statusId", (int)transfer.TransferStatusId);
+
+                    int numberOfRows = cmd.ExecuteNonQuery();
+                    if (numberOfRows == 1)
+                    {
+                        return transfer;
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+
+            return null;
         }
         private static Transfer GetTransferFromReader(SqlDataReader reader)
         {
