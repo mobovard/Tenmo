@@ -127,7 +127,7 @@ namespace TenmoClient
             }
         }
 
-        internal void RespondToTransfer(int transferId)
+        public void RespondToTransfer(int transferId)
         {
             RestRequest request = new RestRequest(API_BASE_URL + $"user/transfer/{transferId}");
             client.Authenticator = new JwtAuthenticator(UserService.GetToken());
@@ -137,7 +137,7 @@ namespace TenmoClient
             {
                 API_Transfer t = getTransferResp.Data;
 
-                Console.WriteLine(DASHES);
+                //Console.WriteLine(DASHES);
                 Console.WriteLine("1: Approve");
                 Console.WriteLine("2: Reject");
                 Console.WriteLine("0: Don't approve or reject");
@@ -267,8 +267,8 @@ namespace TenmoClient
                 Console.WriteLine("Transfer Details");
                 Console.WriteLine(DASHES);
                 Console.WriteLine($"Id: {response.Data.TransferId}");
-                Console.WriteLine($"From: {response.Data.FromUsername} ({response.Data.FromUserId})");
-                Console.WriteLine($"To: {response.Data.ToUsername} ({response.Data.ToUserId})");
+                Console.WriteLine($"From: {response.Data.FromUsername}");
+                Console.WriteLine($"To: {response.Data.ToUsername}");
                 Console.WriteLine($"Type: {response.Data.TransferTypeId}");
                 Console.WriteLine($"Status: {response.Data.TransferStatusId}");
                 Console.WriteLine($"Amount: {response.Data.Amount:C2}");

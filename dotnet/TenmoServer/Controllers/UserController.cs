@@ -21,7 +21,7 @@ namespace TenmoServer.Controllers
         }
 
         [HttpGet]
-        public ActionResult<List<ShortUser>> GetUsers()
+        public ActionResult<List<User>> GetUsers()
         {
             var users = userDAO.GetUsers();
             if (!(users is null))

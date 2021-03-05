@@ -35,7 +35,7 @@ namespace TenmoServer.DAO
                     cmd.Parameters.AddWithValue("@accountFrom", addTransfer.AccountFrom);
                     cmd.Parameters.AddWithValue("@accountTo", addTransfer.AccountTo);
                     cmd.Parameters.AddWithValue("@amount", addTransfer.Amount);
-                    int transferID = (int)(decimal)cmd.ExecuteScalar(); //don't know why it complained when trying to cast this as an int directly, but going through decimal works...
+                    int transferID = (int)(decimal)cmd.ExecuteScalar();
 
                     addTransfer.TransferId = transferID;
                 }

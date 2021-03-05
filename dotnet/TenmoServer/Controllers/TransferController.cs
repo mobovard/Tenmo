@@ -165,14 +165,33 @@ namespace TenmoServer.Controllers
 
             if (int.TryParse(User.FindFirst("sub")?.Value, out int userId))
             {
-                if (transfer.FromUserId == userId)
+                // check that user has permissions
+                if (transfer.FromUserId == userId) 
                 {
+                    // check that transfer is valid (ie, status pending, and transfer info matches what is in db
                     if (dbTransfer.TransferStatusId == TransferStatus.PENDING && dbTransfer.TransferId == transfer.TransferId && transfer.ToUserId == dbTransfer.ToUserId && dbTransfer.Amount == transfer.Amount)
                     {
-                        Transfer t = transferDAO.UpdateTransferStatus(transfer);
+                        Account userAccount = accountDAO.GetAccount(userId);
+                        Account toAccount = accountDAO.GetAccount(transfer.ToUserId);
+                        transfer.AccountFrom = userAccount.AccountId;
+                        transfer.AccountTo = toAccount.AccountId;
 
-                        TransferFunds(t);
-                        return Ok(t);
+                        // check balance is available if user is trying to approve or they are rejecting it
+                        if ((transfer.TransferStatusId == TransferStatus.APPROVED && userAccount.Balance >= transfer.Amount) || transfer.TransferStatusId == TransferStatus.REJECTED)
+                        {
+
+                            Transfer t = transferDAO.UpdateTransferStatus(transfer);
+                            TransferFunds(t);
+                            return Ok(t);
+                        }
+                        else if (transfer.TransferStatusId == TransferStatus.APPROVED && userAccount.Balance < transfer.Amount)
+                        {
+                            return BadRequest("Insufficient funds");
+                        }
+                        else
+                        {
+                            return BadRequest("Invalid request");
+                        }
                     }
                     else
                     {
@@ -186,7 +205,7 @@ namespace TenmoServer.Controllers
             }
             else
             {
-                return NotFound("Invalid User ID");
+                return NotFound("Invalid User");
             }
         }
 

@@ -12,9 +12,13 @@ namespace TenmoServer.Models
         public TransferTypes TransferTypeId { get; set; }
         [Required(ErrorMessage = "Transfer status ID is required")]
         public TransferStatus TransferStatusId { get; set; }
+
+        [JsonIgnore]
         public int AccountFrom { get; set; }
         public int FromUserId { get; set; }
         public string FromUsername { get; set; }
+
+        [JsonIgnore]
         public int AccountTo { get; set; }
         [Required(ErrorMessage = "To user ID is required")]
         public int ToUserId { get; set; }
